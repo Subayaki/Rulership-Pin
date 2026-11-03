@@ -8,6 +8,10 @@ public partial class App : Application {
    ShutdownMode=ShutdownMode.OnExplicitShutdown;
    try {ProfileDiagnostics.Run(profileOutput);Shutdown(0);}catch(Exception error) {System.IO.Directory.CreateDirectory(profileOutput);System.IO.File.WriteAllText(System.IO.Path.Combine(profileOutput,"profile-error.txt"),error.ToString());Shutdown(1);}return;
   }
+  if(e.Args is ["--test-notifications",var notificationOutput]) {
+   ShutdownMode=ShutdownMode.OnExplicitShutdown;
+   try {NotificationDiagnostics.Run(notificationOutput);Shutdown(0);}catch(Exception error) {System.IO.Directory.CreateDirectory(notificationOutput);System.IO.File.WriteAllText(System.IO.Path.Combine(notificationOutput,"notification-error.txt"),error.ToString());Shutdown(1);}return;
+  }
   if(e.Args is ["--test-updater",var updateOutput]) {
    ShutdownMode=ShutdownMode.OnExplicitShutdown;
    try {UpdateDiagnostics.Run(updateOutput);Shutdown(0);}catch(Exception error) {System.IO.Directory.CreateDirectory(updateOutput);System.IO.File.WriteAllText(System.IO.Path.Combine(updateOutput,"updater-error.txt"),error.ToString());Shutdown(1);}return;

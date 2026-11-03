@@ -25,12 +25,22 @@ public partial class PetWindow : Window
  DesktopAdventure? adventure;
  Action? reloadCharacter;
  bool namePromptOpen;
+ readonly DispatcherTimer automaticUpdateTimer=new() {Interval=TimeSpan.FromHours(6)};
+ readonly DispatcherTimer startupUpdateTimer=new() {Interval=TimeSpan.FromSeconds(15)};
+ UpdateNotice? updateNotice;
+ ReleaseInfo? pendingUpdate;
+ MenuItem? updateItem;
+ bool checkingAutomaticUpdate,closingApp;
+ DateTime updateSnoozeUntil;
+ readonly bool diagnosticMode;
+ internal bool HasUpdateNotice=>updateNotice is not null;
  internal bool AdventureActive=>adventure?.Active==true;
  internal DesktopAdventure? Adventure=>adventure;
  Point? lastPetPosition;
  internal int PinCount=>previews.Count;
  public PetWindow():this(false) { }
  internal PetWindow(bool diagnostic) {
+  diagnosticMode=diagnostic;
   InitializeComponent();
   PetSurface.LostMouseCapture+=(_,_)=>{if(pressPoint is not null) {pressPoint=null;if(CharacterStage.Children[0] is ChibiCompanion chibi) chibi.PauseSpontaneous(false);}};
   ExpandedContent.MouseEnter+=(_,_)=>RevealPinButton();
@@ -99,6 +109,7 @@ public partial class PetWindow : Window
     chibi.LowCortisolPlaybackChanged+=playing=>MusicVolume.Visibility=playing && !collapsed?Visibility.Visible:Visibility.Collapsed;
     if(!diagnostic) chibi.MusicFailed+=message=>MessageBox.Show(this,message,"Rulership-Pin – Audio",MessageBoxButton.OK,MessageBoxImage.Warning);
    }
+   updateNotice?.Position(SpeechAnchor());
   }
   ShowModel(selectedModel);
   reloadCharacter=()=>ShowModel(selectedModel);
@@ -128,30 +139,52 @@ public partial class PetWindow : Window
   var choose=new MenuItem {Header="Choose a window…"}; choose.Click+=ChooseWindow; menu.Items.Add(choose);
   var detach=new MenuItem {Header="Close all pins"}; detach.Click+=(_,_)=>{foreach(var pin in previews.Values.ToArray()) pin.Close();}; menu.Items.Add(detach);
   var size=new MenuItem {Header="Adjust companion size"}; size.Click+=AdjustCompanionSize; menu.Items.Add(size);
+  var startup=new MenuItem {Header="Start with Windows",IsCheckable=true,IsChecked=WindowsStartup.IsEnabled(),ToolTip="Start this copy when you sign in to Windows."};startup.Click+=(_,_)=>{if(!WindowsStartup.TrySet(startup.IsChecked,out var message)) {startup.IsChecked=!startup.IsChecked;MessageBox.Show(this,message,"Rulership-Pin – Startup",MessageBoxButton.OK,MessageBoxImage.Warning);}};menu.Items.Add(startup);
   var yourName=new MenuItem {Header="Your name…"};yourName.Click+=(_,_)=>AskUserName(false);menu.Items.Add(yourName);
   expandedOnly.AddRange([modelMenu,animations,choose,size]);
   collapseItem.Click+=(_,_)=>SetCollapsed(!collapsed);menu.Items.Add(collapseItem);
-  var update=new MenuItem {Header="Check for updates…"};update.Click+=async(_,_)=>await AppUpdater.Check(this,update);menu.Items.Add(update);
+  var update=new MenuItem {Header="Check for updates…"};updateItem=update;update.Click+=async(_,_)=>{DismissUpdateNotice();await AppUpdater.Check(this,update);};menu.Items.Add(update);
+  if(!diagnostic) {
+   startupUpdateTimer.Tick+=async(_,_)=>{if(namePromptOpen) return;startupUpdateTimer.Stop();await CheckAutomaticUpdate();};
+   automaticUpdateTimer.Tick+=async(_,_)=>await CheckAutomaticUpdate();
+   Loaded+=(_,_)=>{startupUpdateTimer.Start();automaticUpdateTimer.Start();};
+  }
   var exit=new MenuItem {Header="Quit Rulership-Pin"}; exit.Click+=(_,_)=>Close(); menu.Items.Add(exit); ContextMenu=menu;
   eventCallback=OnWindowMoved;
   if(!diagnostic) SourceInitialized+=(_,_)=>hook=Native.SetWinEventHook(0x000B,0x000B,0,eventCallback,0,0,2);
-  LocationChanged+=(_,_)=>PositionPreview();lastPetPosition=new Point(Left,Top);UpdatePinButton();
-  Closed+=(_,_)=>{adventure?.Dispose();pinButtonTimer.Stop();clickTimer.Stop();Chibi()?.StopLowCortisol(); if(hook!=0) Native.UnhookWinEvent(hook); foreach(var pin in previews.Values.ToArray()) pin.Close(); };
+  LocationChanged+=(_,_)=>{PositionPreview();updateNotice?.Position(SpeechAnchor());};lastPetPosition=new Point(Left,Top);UpdatePinButton();
+  Closed+=(_,_)=>{closingApp=true;startupUpdateTimer.Stop();automaticUpdateTimer.Stop();HideUpdateNotice();adventure?.Dispose();pinButtonTimer.Stop();clickTimer.Stop();Chibi()?.StopLowCortisol(); if(hook!=0) Native.UnhookWinEvent(hook); foreach(var pin in previews.Values.ToArray()) pin.Close(); };
+ }
+ Point SpeechAnchor()=>new(Left+Width/2,Top+(CharacterStage.Children[0] is ChibiCompanion?Math.Max(0,CharacterStage.Height-CharacterStage.Width*.9):12));
+ async Task CheckAutomaticUpdate() {
+  if(checkingAutomaticUpdate || closingApp) return;checkingAutomaticUpdate=true;
+  try {var release=await AppUpdater.QuietCheck();if(!closingApp && release is not null) ReceiveUpdate(release);}finally {checkingAutomaticUpdate=false;}
+ }
+ internal void ReceiveUpdate(ReleaseInfo release) {if(AppUpdater.IsNewRelease(release)) {pendingUpdate=release;ShowUpdateNotice();}}
+ void HideUpdateNotice() {var notice=updateNotice;updateNotice=null;notice?.Close();}
+ void DismissUpdateNotice() {updateSnoozeUntil=DateTime.UtcNow.AddHours(6);HideUpdateNotice();}
+ void ShowUpdateNotice() {
+  if(pendingUpdate is null || closingApp || collapsed || namePromptOpen || AdventureActive || DateTime.UtcNow<updateSnoozeUntil || updateNotice is not null) return;
+  string name=CompanionSettings.LoadUserName()??UserProfile.NameFromGreeting(CompanionSettings.LoadGreeting());if(name.Length==0) name="friend";
+  var notice=new UpdateNotice(this,name,async()=>{DismissUpdateNotice();if(updateItem is not null && updateItem.IsEnabled) await AppUpdater.Check(this,updateItem,true);},DismissUpdateNotice);
+  updateNotice=notice;notice.SizeChanged+=(_,_)=>notice.Position(SpeechAnchor());notice.Position(SpeechAnchor());if(!diagnosticMode) notice.Show();notice.Position(SpeechAnchor());
  }
  void AskUserName(bool firstRun) {
   if(namePromptOpen) return;namePromptOpen=true;clickTimer.Stop();adventure?.Cancel();
+  HideUpdateNotice();
   var chibi=CharacterStage.Children[0] as ChibiCompanion;chibi?.StopLowCortisol();chibi?.PauseSpontaneous(true);
   try {
    string initial=CompanionSettings.LoadUserName()??UserProfile.NameFromGreeting(CompanionSettings.LoadGreeting());
    var anchor=new Point(Left+Width/2,Top+Math.Max(0,CharacterStage.Height-CharacterStage.Width*.9));
    var prompt=new NamePrompt(this,firstRun,initial,anchor);prompt.ShowDialog();
    if(prompt.Saved) reloadCharacter?.Invoke();
-  } finally {if(CharacterStage.Children[0] is ChibiCompanion current) current.PauseSpontaneous(false);namePromptOpen=false;}
+  } finally {if(CharacterStage.Children[0] is ChibiCompanion current) current.PauseSpontaneous(false);namePromptOpen=false;ShowUpdateNotice();}
  }
  internal void StartAdventure(string id,bool showOverlay=true) {
   if(collapsed || CharacterStage.Children[0] is not ChibiCompanion chibi) return;
   clickTimer.Stop();chibi.StopLowCortisol();chibi.ReturnToIdle();
-  adventure??=new DesktopAdventure(this,CharacterStage,()=>{if(CharacterStage.Children[0] is ChibiCompanion current) current.ReturnToIdle();});
+  HideUpdateNotice();
+  adventure??=new DesktopAdventure(this,CharacterStage,()=>{if(CharacterStage.Children[0] is ChibiCompanion current) current.ReturnToIdle();ShowUpdateNotice();});
   adventure.Start(id,companionScale,showOverlay);
  }
  internal void CancelAdventure()=>adventure?.Cancel();
@@ -167,6 +200,7 @@ public partial class PetWindow : Window
  }
  internal void SetCollapsed(bool value) {
   if(collapsed==value) return;
+  HideUpdateNotice();
   adventure?.Cancel();
   pinButtonTimer.Stop();ChooseButton.Visibility=Visibility.Hidden;
   clickTimer.Stop();pressPoint=null;if(PetSurface.IsMouseCaptured) PetSurface.ReleaseMouseCapture();
@@ -195,6 +229,7 @@ public partial class PetWindow : Window
    }
    foreach(var item in expandedOnly) item.IsEnabled=!collapsed;
    collapseItem.Header=collapsed?"Expand Rulership":"Minimize to orb";
+   if(!collapsed) ShowUpdateNotice();
   } finally {
    
    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle,()=>{suppressPreviewMovement=false;});
@@ -212,6 +247,7 @@ public partial class PetWindow : Window
   double center=Left+Width/2,bottom=Top+Height;
   companionScale=Math.Clamp(scale,.5,1.75);
   CharacterStage.Width=240*companionScale;CharacterStage.Height=360*companionScale;
+  updateNotice?.Position(SpeechAnchor());
   Width=Math.Max(180,CharacterStage.Width);Height=CharacterStage.Height+38;
   if(keepAnchor) {
    var area=SystemParameters.WorkArea;

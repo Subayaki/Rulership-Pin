@@ -16,6 +16,8 @@ Download the portable ZIP from [Releases](https://github.com/Subayaki/Rulership-
 - Minimize to orb keeps pinned previews stationary. Drag the orb or double-click to expand.
 - Check for updates downloads a verified release and restarts the app after confirmation. Settings are preserved.
 - On first start, a small speech bubble asks for your name. It is saved locally, used on the sign, and available to future animations. **Your name…** changes it later. Choosing Later keeps the app usable and asks again on next start.
+- **Start with Windows** optionally starts this copy when you sign in. It is off until enabled and needs no administrator account. Keep the app in the same folder afterwards.
+- Updates are checked quietly after startup and every six hours. A newer stable version shows a non-activating, personalized bubble above the character. Click it, confirm **Do you want to update now?**, and the verified updater handles the rest. Close the bubble to postpone it; no update or network error popup appears when nothing is available.
 
 ## Build and releases
 

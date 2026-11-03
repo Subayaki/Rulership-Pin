@@ -25,7 +25,16 @@ internal static class AppUpdater
   if(response.StatusCode==HttpStatusCode.NotFound) return null;response.EnsureSuccessStatusCode();
   using var stream=await response.Content.ReadAsStreamAsync();return await JsonSerializer.DeserializeAsync<ReleaseInfo>(stream);
  }
- internal static async Task Check(Window owner,MenuItem item) {
+ internal static bool IsNewRelease(ReleaseInfo release) {
+  if(release.Draft || release.Prerelease || !Version.TryParse(release.Tag.TrimStart('v'),out var version) || version<=Current || release.Assets is null) return false;
+  var asset=release.Assets.SingleOrDefault(a=>a.Name==AssetName);if(asset is null) return false;
+  ValidateAssetUrl(asset.Url,release.Tag,AssetName);return true;
+ }
+ internal static async Task<ReleaseInfo?> QuietCheck() {
+  try {using var client=Client();client.Timeout=TimeSpan.FromSeconds(20);var release=await Latest(client);return release is not null && IsNewRelease(release)?release:null;}
+  catch(Exception error) when(error is HttpRequestException or TaskCanceledException or JsonException or InvalidDataException or InvalidOperationException) {return null;}
+ }
+ internal static async Task Check(Window owner,MenuItem item,bool fromNotification=false) {
   item.IsEnabled=false;item.Header="Checking for updates…";
   using var cancellation=new CancellationTokenSource();Window? progress=null;TextBlock? progressText=null;
   void Report(string text) {item.Header=text;if(progressText is not null) progressText.Text=text;}
@@ -42,7 +51,8 @@ internal static class AppUpdater
     ValidateAssetUrl(checksum.Url,release.Tag,AssetName+".sha256");hash=(await client.GetStringAsync(checksum.Url)).Trim().Split((char[]?)null,StringSplitOptions.RemoveEmptyEntries)[0];
    }
    if(hash.Length!=64 || !hash.All(Uri.IsHexDigit)) throw new InvalidDataException("The update checksum is invalid.");
-   if(MessageBox.Show(owner,$"Version {version.ToString(3)} is available.\n\nDownload and install it? Rulership will restart and pinned previews will close. Your settings will be kept.","Rulership-Pin – Update available",MessageBoxButton.YesNo,MessageBoxImage.Information)!=MessageBoxResult.Yes) return;
+   string question=fromNotification?"Do you want to update now?":"Download and install it?";
+   if(MessageBox.Show(owner,$"{question}\n\nVersion {version.ToString(3)} is available. Rulership will restart and pinned previews will close. Your settings will be kept.","Rulership-Pin – Update available",MessageBoxButton.YesNo,MessageBoxImage.Information)!=MessageBoxResult.Yes) return;
    progressText=new TextBlock {Text="Downloading update…",Margin=new Thickness(0,0,0,12)};
    var panel=new StackPanel {Margin=new Thickness(18)};panel.Children.Add(progressText);panel.Children.Add(new ProgressBar {IsIndeterminate=true,Height=12});
    var cancel=new Button {Content="Cancel",HorizontalAlignment=HorizontalAlignment.Right,Margin=new Thickness(0,12,0,0),Padding=new Thickness(12,4,12,4)};cancel.Click+=(_,_)=>cancellation.Cancel();panel.Children.Add(cancel);

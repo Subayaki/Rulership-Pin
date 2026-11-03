@@ -26,6 +26,19 @@ legacy hardcoded greeting into that settings file. If manually replacing an
 old ZIP version, save the desired greeting in settings first; the overwritten
 old DLL cannot be inspected afterwards.
 
+From 1.3, the app quietly checks 15 seconds after startup (waiting while the
+name prompt is open) and every six hours. Only newer, non-draft, non-prerelease
+versions with the expected portable asset qualify. Network errors stay quiet.
+The name is rendered locally in a non-activating, clickable update bubble and
+is never sent in update requests. Clicking asks for confirmation before any
+download. Dismissing snoozes notifications for six hours in that session.
+Pending notices hide while folded or on a desktop outing and return afterwards.
+
+**Start with Windows** is an opt-in per-user HKCU Run entry pointing to the
+current executable with `--startup`. It runs when that Windows user signs in,
+not as an administrator or system service. Disable the same menu item to remove
+it. Updates keep the same path and do not change this startup preference.
+
 Starting with 1.2, the first start asks for a name in a small speech bubble above
 the character. Save stores `UserName` locally, and all name-aware artwork reads
 that shared preference. **Your name…** edits it later. Existing personalized
