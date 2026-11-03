@@ -1,0 +1,27 @@
+<Window x:Class="RulershipPin.PetWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:RulershipPin"
+ Title="Rulership-Pin" Width="240" Height="398" WindowStyle="None" AllowsTransparency="True" Background="Transparent" Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize">
+ <Grid>
+ <StackPanel x:Name="ExpandedContent">
+  <Border x:Name="PetSurface" Background="#01000000" CornerRadius="28" MouseLeftButtonDown="MovePet" MouseMove="MovePetPointer" MouseLeftButtonUp="ReleasePet" ToolTip="Click Chibi for a reaction • Drag to move • Right-click for menu • Double-click to pin a window">
+   <Grid x:Name="CharacterStage" Width="240" Height="360">
+   </Grid>
+  </Border>
+  <Button x:Name="ChooseButton" Visibility="Hidden" Content="+ Pin a window" Margin="10,0" Padding="8,5" Background="#EE282035" Foreground="#FFF1E8FF" BorderBrush="#FF9F72BE" Click="ChooseWindow" />
+ </StackPanel>
+ <Border x:Name="MusicVolume" Visibility="Collapsed" Width="34" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,3,64" Padding="5,7" CornerRadius="12" Background="#E8282035" BorderBrush="#9F72BE" BorderThickness="1" ToolTip="Music volume">
+  <StackPanel>
+   <TextBlock Text="♫" Foreground="#FFF1E8FF" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+   <Slider x:Name="MusicVolumeSlider" Orientation="Vertical" Height="76" Minimum="0" Maximum="100" Value="35" IsMoveToPointEnabled="True" ValueChanged="MusicVolumeChanged" AutomationProperties.Name="Music volume"/>
+  </StackPanel>
+ </Border>
+ <Border x:Name="Orb" Visibility="Collapsed" Width="48" Height="48" Background="Transparent" Cursor="Hand" MouseLeftButtonDown="OrbDown" ToolTip="Double-click to expand Rulership • Drag to move • Right-click for menu">
+  <Canvas Width="48" Height="48" Opacity="0.8">
+   <Canvas.Resources><RadialGradientBrush x:Key="OrbFill" GradientOrigin="0.3,0.25"><GradientStop Color="#FFC79A74" Offset="0"/><GradientStop Color="#FF39292B" Offset="1"/></RadialGradientBrush></Canvas.Resources>
+   <Image Source="Assets/rulership-orb-ears-tail.png" Width="48" Height="48" Stretch="Uniform" IsHitTestVisible="False"/>
+   <Ellipse Canvas.Left="7" Canvas.Top="13" Width="30" Height="30" Fill="{StaticResource OrbFill}" Stroke="#C9D9B78A" StrokeThickness="1.5"/>
+   <Ellipse Canvas.Left="19" Canvas.Top="25" Width="7" Height="7" Fill="#FFF7E5C3" Opacity="0.75"/>
+  </Canvas>
+ </Border>
+ </Grid>
+</Window>
+

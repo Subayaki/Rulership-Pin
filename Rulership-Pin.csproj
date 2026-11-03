@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Rulership-Pin</AssemblyName>
+    <RootNamespace>RulershipPin</RootNamespace>
+    <UseAppHost>true</UseAppHost>
+    <Version>1.1.0</Version>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**</DefaultItemExcludes>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="Assets\rulership-run.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\rulership-lurk.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\rulership-orb-ears-tail.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\rulership-low-cortisol.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\low-cortisol.m4a" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\rulership-chibi-sheet.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\rulership-chibi-reactions.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\rulership-idle-v01.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\rulership-standing-v01.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\rulership-tpose-v01.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\rulership-tpose-body-v01.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\rulership-tpose-coat-v01.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\rulership-jacket-sleeves-v01.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
