@@ -4,8 +4,19 @@ namespace RulershipPin;
 internal static class CompanionSettings
 {
  static string PathName=>Path.Combine(AppContext.BaseDirectory,"companion-settings.json");
- sealed record Settings(double CompanionScale=1,string Model="Chibi",string? LowCortisolMusic=null,bool SpontaneousAnimations=true,bool AutomaticAdventures=true,string Greeting="Hello there <3");
- internal static string LoadGreeting() {string greeting=Load().Greeting??"Hello there <3";return greeting.Length<=40?greeting:"Hello there <3";}
+ sealed record Settings(double CompanionScale=1,string Model="Chibi",string? LowCortisolMusic=null,bool SpontaneousAnimations=true,bool AutomaticAdventures=true,string Greeting="Hello there <3",string? UserName=null);
+ internal static string? LoadUserName()=>UserProfile.TryNormalizeName(Load().UserName,out var name)?name:null;
+ internal static string LoadGreeting() {
+  var settings=Load();if(UserProfile.TryNormalizeName(settings.UserName,out var name)) return UserProfile.Greeting(name);
+  string greeting=settings.Greeting??"Hello there <3";return greeting.Length<=40?greeting:"Hello there <3";
+ }
+ internal static bool TrySaveUserName(string? value,out string message) {
+  if(!UserProfile.TryNormalizeName(value,out var name)) {message="Please enter a name using 1–24 characters.";return false;}
+  try {
+   File.WriteAllText(PathName+".tmp",JsonSerializer.Serialize(Load() with {UserName=name,Greeting=UserProfile.Greeting(name)},new JsonSerializerOptions {WriteIndented=true}));
+   File.Move(PathName+".tmp",PathName,true);message="";return true;
+  } catch(Exception error) when(error is IOException or UnauthorizedAccessException) {message="Could not save your name. Check that the app folder is writable.";return false;}
+ }
  internal static bool LoadAutomaticAdventures()=>Load().AutomaticAdventures;
  internal static bool TrySaveAutomaticAdventures(bool enabled,out string message) {
   try {

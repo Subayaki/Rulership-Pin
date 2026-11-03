@@ -21,7 +21,7 @@ internal static class UpdateDiagnostics
   var manifest=new PackageManifest("1.1.0",files.ToDictionary(p=>p.Key,p=>Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(p.Value)))));
   string zip=Path.Combine(root,"valid.zip");MakeZip(zip,files,manifest);
   string stage=Path.Combine(root,"stage");var verified=UpdatePackage.Extract(zip,stage,UpdatePackage.Hash(zip),"1.1.0");
-  const string personalSettings="{\"Greeting\":\"Hello friend <3\",\"CompanionScale\":1}";
+  const string personalSettings="{\"Greeting\":\"Hello friend <3\",\"UserName\":\"Sky\",\"CompanionScale\":1}";
   string target=Path.Combine(root,"installed");Directory.CreateDirectory(target);File.WriteAllText(Path.Combine(target,"Rulership-Pin.exe"),"old exe");File.WriteAllText(Path.Combine(target,"Rulership-Pin.dll"),"old dll");File.WriteAllText(Path.Combine(target,"companion-settings.json"),personalSettings);
   bool rolledBack=false;
   try {UpdatePackage.Install(stage,target,verified,n=>{if(n==3) throw new IOException("simulated file-copy failure");});}catch(IOException) {rolledBack=true;}
@@ -30,7 +30,7 @@ internal static class UpdateDiagnostics
   if(File.ReadAllText(Path.Combine(target,"companion-settings.json"))!=personalSettings || File.ReadAllText(Path.Combine(target,"Rulership-Pin.exe"))!="new exe" || File.ReadAllText(Path.Combine(backup,"Rulership-Pin.exe"))!="old exe") throw new InvalidDataException("Install/backup/settings preservation failed");
   Reject(()=>UpdatePackage.Extract(zip,Path.Combine(root,"wrong-hash"),new string('0',64),"1.1.0"));
   Reject(()=>UpdatePackage.Extract(zip,Path.Combine(root,"wrong-version"),UpdatePackage.Hash(zip),"9.0.0"));
-  foreach(string path in new[]{"../outside.exe","Assets/../../outside.exe","/absolute.exe","C:/evil.exe","Assets\\evil.exe","companion-settings.json","update-history/evil.txt"}) Reject(()=>UpdatePackage.SafePath(target,path));
+  foreach(string path in new[]{"../outside.exe","Assets/../../outside.exe","/absolute.exe","C:/evil.exe","Assets\\evil.exe","companion-settings.json","update-history/evil.txt","Assets/CON.txt","Assets/LPT1","Assets/bad?.png"}) Reject(()=>UpdatePackage.SafePath(target,path));
   foreach(string unsafeEntry in new[]{"Rulership_pin_custom/../outside.exe","other/Rulership-Pin.exe","Rulership_pin_custom/companion-settings.json","Rulership_pin_custom/RULERSHIP-PIN.EXE"}) {
    string bad=Path.Combine(root,Guid.NewGuid()+".zip");MakeZip(bad,files,manifest,unsafeEntry);
    Reject(()=>UpdatePackage.Extract(bad,Path.Combine(root,Guid.NewGuid().ToString("N")),UpdatePackage.Hash(bad),"1.1.0"));

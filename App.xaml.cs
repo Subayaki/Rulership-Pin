@@ -4,6 +4,10 @@ public partial class App : Application {
  private System.Threading.Mutex? instanceMutex;
  protected override void OnStartup(StartupEventArgs e) {
   if(e.Args is ["--apply-update",var job]) {ShutdownMode=ShutdownMode.OnExplicitShutdown;Shutdown(AppUpdater.Apply(job));return;}
+  if(e.Args is ["--test-profile",var profileOutput]) {
+   ShutdownMode=ShutdownMode.OnExplicitShutdown;
+   try {ProfileDiagnostics.Run(profileOutput);Shutdown(0);}catch(Exception error) {System.IO.Directory.CreateDirectory(profileOutput);System.IO.File.WriteAllText(System.IO.Path.Combine(profileOutput,"profile-error.txt"),error.ToString());Shutdown(1);}return;
+  }
   if(e.Args is ["--test-updater",var updateOutput]) {
    ShutdownMode=ShutdownMode.OnExplicitShutdown;
    try {UpdateDiagnostics.Run(updateOutput);Shutdown(0);}catch(Exception error) {System.IO.Directory.CreateDirectory(updateOutput);System.IO.File.WriteAllText(System.IO.Path.Combine(updateOutput,"updater-error.txt"),error.ToString());Shutdown(1);}return;

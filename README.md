@@ -15,6 +15,7 @@ Download the portable ZIP from [Releases](https://github.com/Subayaki/Rulership-
 - Automatic Lurk & escape has its own saved toggle, independent of the other idle reactions.
 - Minimize to orb keeps pinned previews stationary. Drag the orb or double-click to expand.
 - Check for updates downloads a verified release and restarts the app after confirmation. Settings are preserved.
+- On first start, a small speech bubble asks for your name. It is saved locally, used on the sign, and available to future animations. **Your name…** changes it later. Choosing Later keeps the app usable and asks again on next start.
 
 ## Build and releases
 

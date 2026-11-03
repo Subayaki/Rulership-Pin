@@ -11,6 +11,10 @@ internal static class UpdatePackage
  internal static string Hash(string file) {using var stream=File.OpenRead(file);return Convert.ToHexString(SHA256.HashData(stream));}
  internal static string SafePath(string root,string relative,bool allowBackup=false) {
   if(string.IsNullOrWhiteSpace(relative) || relative.Contains('\\') || relative.Contains(':') || relative.Split('/').Any(p=>p is "" or "." or ".." || p.EndsWith('.') || p.EndsWith(' '))) throw new InvalidDataException("Unsafe update path.");
+  foreach(string component in relative.Split('/')) {
+   string stem=component.Split('.')[0].ToUpperInvariant();
+   if(component.IndexOfAny(Path.GetInvalidFileNameChars())>=0 || stem is "CON" or "PRN" or "AUX" or "NUL" || (stem.Length==4 && (stem.StartsWith("COM") || stem.StartsWith("LPT")) && stem[3] is >= '1' and <= '9')) throw new InvalidDataException("Invalid Windows update filename.");
+  }
   if(Path.GetFileName(relative).StartsWith("companion-settings.json",StringComparison.OrdinalIgnoreCase) || (!allowBackup && relative.StartsWith("update-history",StringComparison.OrdinalIgnoreCase))) throw new InvalidDataException("Update contains personal settings or backup files.");
   string full=Path.GetFullPath(Path.Combine(root,relative)),prefix=Path.TrimEndingDirectorySeparator(Path.GetFullPath(root))+Path.DirectorySeparatorChar;
   if(!full.StartsWith(prefix,StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("Update path escapes its folder.");

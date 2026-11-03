@@ -27,6 +27,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Build failed' }
           dotnet bin/Release/net10.0-windows/Rulership-Pin.dll --test-updater artifacts/UpdateChecks
           if ($LASTEXITCODE -ne 0) { throw 'Updater checks failed' }
+          dotnet bin/Release/net10.0-windows/Rulership-Pin.dll --test-profile artifacts/ProfileChecks
+          if ($LASTEXITCODE -ne 0) { throw 'Profile checks failed' }
           dotnet bin/Release/net10.0-windows/Rulership-Pin.dll --render-chibi-reactions artifacts/ChibiChecks
           if ($LASTEXITCODE -ne 0) { throw 'Animation checks failed' }
       - name: Package portable app

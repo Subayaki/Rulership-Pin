@@ -26,6 +26,13 @@ legacy hardcoded greeting into that settings file. If manually replacing an
 old ZIP version, save the desired greeting in settings first; the overwritten
 old DLL cannot be inspected afterwards.
 
+Starting with 1.2, the first start asks for a name in a small speech bubble above
+the character. Save stores `UserName` locally, and all name-aware artwork reads
+that shared preference. **Your name…** edits it later. Existing personalized
+greetings are offered as the initial value when possible. Later postpones the
+question until the next start. Name input is never sent to GitHub or included
+in source/releases; subsequent updates preserve the settings file byte-for-byte.
+
 ## Maintainers
 
 Source is built on Windows with .NET 10. Only app source and the explicitly

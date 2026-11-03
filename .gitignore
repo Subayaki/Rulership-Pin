@@ -17,3 +17,6 @@ TESTING.md
 Assets/*.md
 Assets/*.txt
 Assets/*.json
+QA/
+Assets/rulership-mannequin*.png
+Assets/rulership-rig*.png

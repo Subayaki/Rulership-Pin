@@ -8,7 +8,7 @@
     <AssemblyName>Rulership-Pin</AssemblyName>
     <RootNamespace>RulershipPin</RootNamespace>
     <UseAppHost>true</UseAppHost>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
     <ApplicationManifest>app.manifest</ApplicationManifest>

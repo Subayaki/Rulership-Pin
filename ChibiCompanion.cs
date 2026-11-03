@@ -103,6 +103,7 @@ public sealed class ChibiCompanion : Grid
    // A warm handwritten ink style belongs to the cream board surface.
    string greeting=CompanionSettings.LoadGreeting().Replace("Hello ","Hello\n",StringComparison.Ordinal);
    var lettering=new FormattedText(greeting,System.Globalization.CultureInfo.InvariantCulture,FlowDirection.LeftToRight,new Typeface("Segoe Print"),19,ink,1) {TextAlignment=TextAlignment.Center,LineHeight=24};
+   if(lettering.WidthIncludingTrailingWhitespace>108) lettering.SetFontSize(Math.Max(7,19*108/lettering.WidthIncludingTrailingWhitespace));
    drawing.DrawText(lettering,new Point(60,15));
    drawing.Pop();drawing.Pop();
   }

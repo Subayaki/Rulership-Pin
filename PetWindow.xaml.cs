@@ -23,6 +23,8 @@ public partial class PetWindow : Window
  nint hook;
  readonly Dictionary<nint,PreviewWindow> previews=[];
  DesktopAdventure? adventure;
+ Action? reloadCharacter;
+ bool namePromptOpen;
  internal bool AdventureActive=>adventure?.Active==true;
  internal DesktopAdventure? Adventure=>adventure;
  Point? lastPetPosition;
@@ -99,6 +101,8 @@ public partial class PetWindow : Window
    }
   }
   ShowModel(selectedModel);
+  reloadCharacter=()=>ShowModel(selectedModel);
+  if(!diagnostic) Loaded+=(_,_)=>Dispatcher.BeginInvoke(()=>{if(CompanionSettings.LoadUserName() is null) AskUserName(true);});
   var modelMenu=new MenuItem {Header="Model"};
   foreach(string model in new[]{"Chibi","Original"}) {
    var item=new MenuItem {Header=model=="Original"?"Original (Beta)":model,Tag=model,IsCheckable=true,IsChecked=model==selectedModel};
@@ -124,6 +128,7 @@ public partial class PetWindow : Window
   var choose=new MenuItem {Header="Choose a window…"}; choose.Click+=ChooseWindow; menu.Items.Add(choose);
   var detach=new MenuItem {Header="Close all pins"}; detach.Click+=(_,_)=>{foreach(var pin in previews.Values.ToArray()) pin.Close();}; menu.Items.Add(detach);
   var size=new MenuItem {Header="Adjust companion size"}; size.Click+=AdjustCompanionSize; menu.Items.Add(size);
+  var yourName=new MenuItem {Header="Your name…"};yourName.Click+=(_,_)=>AskUserName(false);menu.Items.Add(yourName);
   expandedOnly.AddRange([modelMenu,animations,choose,size]);
   collapseItem.Click+=(_,_)=>SetCollapsed(!collapsed);menu.Items.Add(collapseItem);
   var update=new MenuItem {Header="Check for updates…"};update.Click+=async(_,_)=>await AppUpdater.Check(this,update);menu.Items.Add(update);
@@ -132,6 +137,16 @@ public partial class PetWindow : Window
   if(!diagnostic) SourceInitialized+=(_,_)=>hook=Native.SetWinEventHook(0x000B,0x000B,0,eventCallback,0,0,2);
   LocationChanged+=(_,_)=>PositionPreview();lastPetPosition=new Point(Left,Top);UpdatePinButton();
   Closed+=(_,_)=>{adventure?.Dispose();pinButtonTimer.Stop();clickTimer.Stop();Chibi()?.StopLowCortisol(); if(hook!=0) Native.UnhookWinEvent(hook); foreach(var pin in previews.Values.ToArray()) pin.Close(); };
+ }
+ void AskUserName(bool firstRun) {
+  if(namePromptOpen) return;namePromptOpen=true;clickTimer.Stop();adventure?.Cancel();
+  var chibi=CharacterStage.Children[0] as ChibiCompanion;chibi?.StopLowCortisol();chibi?.PauseSpontaneous(true);
+  try {
+   string initial=CompanionSettings.LoadUserName()??UserProfile.NameFromGreeting(CompanionSettings.LoadGreeting());
+   var anchor=new Point(Left+Width/2,Top+Math.Max(0,CharacterStage.Height-CharacterStage.Width*.9));
+   var prompt=new NamePrompt(this,firstRun,initial,anchor);prompt.ShowDialog();
+   if(prompt.Saved) reloadCharacter?.Invoke();
+  } finally {if(CharacterStage.Children[0] is ChibiCompanion current) current.PauseSpontaneous(false);namePromptOpen=false;}
  }
  internal void StartAdventure(string id,bool showOverlay=true) {
   if(collapsed || CharacterStage.Children[0] is not ChibiCompanion chibi) return;
